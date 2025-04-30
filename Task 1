@@ -1,0 +1,37 @@
+// Code for task 1 : push button counter. executed in online tinkercad platform . Successfully able to implement the debouncing the button to ensure accurate counting  
+   And displaying the count on s serial monitor.
+
+const int buttonPin = 7;
+unsigned long count = 0;
+bool lastButtonState = HIGH;
+bool buttonState;
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 20;
+
+void setup() {
+  pinMode(buttonPin, INPUT_PULLUP); // Internal pull-up resistor
+  Serial.begin(9600);
+  Serial.println("Button Press Counter");
+}
+
+void loop() {
+  bool reading = digitalRead(buttonPin);
+
+  if (reading != lastButtonState) {
+    lastDebounceTime = millis(); // Button state changed
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading != buttonState) {
+      buttonState = reading;
+
+      if (buttonState == LOW) {
+        count++;
+        Serial.print("Count: ");
+        Serial.println(count);
+      }
+    }
+  }
+
+  lastButtonState = reading;
+}
