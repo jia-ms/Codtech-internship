@@ -1,0 +1,70 @@
+//simple code to monitor home devices using bluetooth - Smart home automation
+
+
+// ----- Pin Assignments -----
+#define DEVICE1 7
+#define DEVICE2 6
+#define DEVICE3 5
+#define DEVICE4 4
+
+char btCommand;  // Variable to store command from Bluetooth
+
+void setup() {
+  // Initialize Serial communication for Bluetooth module (HC-05 uses TX/RX pins)
+  Serial.begin(9600);
+
+  // Set device pins as OUTPUT
+  pinMode(DEVICE1, OUTPUT);
+  pinMode(DEVICE2, OUTPUT);
+  pinMode(DEVICE3, OUTPUT);
+  pinMode(DEVICE4, OUTPUT);
+
+  // Initially turn OFF all devices (assuming HIGH = OFF)
+  digitalWrite(DEVICE1, HIGH);
+  digitalWrite(DEVICE2, HIGH);
+  digitalWrite(DEVICE3, HIGH);
+  digitalWrite(DEVICE4, HIGH);
+}
+
+void loop() {
+  // Check if Bluetooth has sent data
+  if (Serial.available()) {
+    btCommand = Serial.read();  // Read incoming character
+
+    // Perform actions based on the command
+    switch(btCommand) {
+      case 'A':  // Turn ON Device 1
+        digitalWrite(DEVICE1, LOW);
+        break;
+      case 'a':  // Turn OFF Device 1
+        digitalWrite(DEVICE1, HIGH);
+        break;
+
+      case 'B':
+        digitalWrite(DEVICE2, LOW);
+        break;
+      case 'b':
+        digitalWrite(DEVICE2, HIGH);
+        break;
+
+      case 'C':
+        digitalWrite(DEVICE3, LOW);
+        break;
+      case 'c':
+        digitalWrite(DEVICE3, HIGH);
+        break;
+
+      case 'D':
+        digitalWrite(DEVICE4, LOW);
+        break;
+      case 'd':
+        digitalWrite(DEVICE4, HIGH);
+        break;
+
+      default:
+        // Invalid command — do nothing
+        break;
+    }
+  }
+}
+
