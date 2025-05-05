@@ -1,0 +1,90 @@
+AIM: TO BUILD A BASIC SPEECH RECOGNITION SYSTEM FOR COMMAND-BASED CONTROL OF DEVICES USING AN EMBEDDED BOARD
+
+Listens to your voice using the microphone.
+Converts speech to text using the Vosk model (offline).
+If you say "turn on" or "turn off", it turns an LED or device on/off using a GPIO pin on the Raspberry Pi.
+
+# Import necessary libraries
+import os                     # For working with file paths
+import json                   # To handle JSON data from the recognizer
+import queue                  # Thread-safe queue for handling audio data
+import sounddevice as sd     # For recording audio from the microphone
+from vosk import Model, KaldiRecognizer  # Vosk for offline speech recognition
+import RPi.GPIO as GPIO       # Raspberry Pi GPIO control
+import time                   # Time library (used here for potential delays)
+
+# ----------------------------- GPIO Setup --------------------------------
+
+# Set GPIO pin numbering mode to BCM (Broadcom chip-specific numbers)
+GPIO.setmode(GPIO.BCM)
+
+# Define the GPIO pin number for LED control
+LED_PIN = 17
+
+# Set the LED pin as an output pin
+GPIO.setup(LED_PIN, GPIO.OUT)
+
+# -------------------------- Load Speech Model ----------------------------
+
+# Path to the Vosk speech recognition model directory
+model_path = os.path.expanduser("~/speech/models/model")
+
+# Load the model from the given path
+model = Model(model_path)
+
+# Create a recognizer object with the model and set audio sample rate to 16kHz
+recognizer = KaldiRecognizer(model, 16000)
+
+# ------------------------ Audio Input Configuration ----------------------
+
+# Create a queue to hold incoming audio data (used by the audio callback)
+q = queue.Queue()
+
+# This function will be automatically called when audio data is available
+def callback(indata, frames, time, status):
+    if status:
+        print(status)  # Print any errors or warnings
+    q.put(bytes(indata))  # Add the raw audio data to the queue
+
+# ----------------------- Command Execution Logic -------------------------
+
+# This function receives the recognized text and performs actions accordingly
+def execute_command(text):
+    text = text.lower()  # Convert the text to lowercase for consistency
+    print("Heard:", text)  # Print the recognized phrase
+
+    # If the command is to turn on the device
+    if "turn on" in text or "switch on" in text:
+        GPIO.output(LED_PIN, GPIO.HIGH)  # Turn on LED
+        print("Device ON")
+
+    # If the command is to turn off the device
+    elif "turn off" in text or "switch off" in text:
+        GPIO.output(LED_PIN, GPIO.LOW)  # Turn off LED
+        print("Device OFF")
+
+# ---------------------- Main Audio Listening Loop ------------------------
+
+try:
+    # Open an input audio stream with specified settings
+    with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype='int16',
+                           channels=1, callback=callback):
+        print("Listening... Say 'turn on' or 'turn off'")
+
+        # Continuous loop to process incoming audio data
+        while True:
+            data = q.get()  # Get the next chunk of audio from the queue
+
+            # If the recognizer accepts the full phrase (has complete words)
+            if recognizer.AcceptWaveform(data):
+                result = json.loads(recognizer.Result())  # Get recognized result
+                if result.get("text"):  # If text is present in result
+                    execute_command(result["text"])  # Process the command
+
+# Graceful exit when the user stops the program (Ctrl+C)
+except KeyboardInterrupt:
+    print("Exiting...")
+
+# Clean up GPIO pins on exit (good practice)
+finally:
+    GPIO.cleanup()
