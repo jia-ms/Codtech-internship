@@ -1,0 +1,27 @@
+USE A TEMPERATURE SENSOR TO READ AND DISPLAY TEMPERATURE DATA ON AN LCD.
+
+#include <LiquidCrystal.h>
+
+// initialisation of the pins based on the wiring
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+const int lm35Pin = A0;
+float temperature;
+
+void setup() {
+  lcd.begin(16, 2);
+  lcd.print("Temp Monitor");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+  int analogValue = analogRead(lm35Pin);
+  temperature = analogValue * (5.0 / 1023.0) * 100.0;
+  lcd.setCursor(0, 0);
+  lcd.print("Temp: ");
+  lcd.print(temperature);
+  lcd.print(" C");
+
+  delay(1000);
+}
